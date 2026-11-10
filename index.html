@@ -29,6 +29,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5; -webkit-tap-highlight-color: transparent; }
 button, input, select { font: inherit; color: inherit; }
@@ -127,7 +128,7 @@ body.green .aurora, body.green .floor { display: none; }
 .tabs button[aria-selected="true"] { color: #fff; background: linear-gradient(120deg, var(--magenta), var(--violet)); box-shadow: 0 4px 16px rgba(255, 61, 154, .35); }
 .tab { padding: 18px 20px 28px; overflow: auto; display: grid; gap: 20px; align-content: start; flex: 1; min-height: 0; }
 .group { display: grid; gap: 10px; }
-.group > h3 { margin: 0; font-family: var(--tech); font-size: 11px; font-weight: 600; letter-spacing: .16em; color: var(--cyan); }
+.group > h3, .q-head h3 { margin: 0; font-family: var(--tech); font-size: 11px; font-weight: 600; letter-spacing: .16em; color: var(--cyan); }
 .hint { margin: 0; color: var(--muted); font-size: 12px; }
 .row { display: flex; gap: 8px; align-items: center; }
 .field { flex: 1; min-width: 0; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0, 0, 0, .25); }
@@ -178,13 +179,49 @@ kbd { font-family: var(--tech); font-size: 10px; padding: 2px 6px; border-radius
 .num-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 14px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); }
 .num-field input { width: 84px; flex: none; text-align: right; font-family: var(--tech); }
 
+/* ---------- 排队与登记 ---------- */
+.now { display: grid; gap: 10px; padding: 14px; border-radius: 16px; border: 1px solid rgba(255, 61, 154, .35); background: linear-gradient(135deg, rgba(255, 61, 154, .16), rgba(123, 60, 255, .12)); }
+.now-status { display: flex; align-items: center; gap: 10px; min-height: 42px; }
+.now-status .lamp { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+.now-status[data-s="spinning"] .lamp { background: var(--gold); box-shadow: 0 0 10px var(--gold); animation: blink .6s infinite; }
+.now-status[data-s="waiting"] .lamp { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+.now-status[data-s="paused"] .lamp { background: var(--live); box-shadow: 0 0 10px var(--live); }
+.now-status > span:last-child { min-width: 0; }
+.now-status strong { display: block; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.now-status small { display: block; color: var(--muted); font-size: 12px; }
+.now .row .btn { flex: 1; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.on { border-color: var(--live); color: #ffd6df; background: rgba(255, 45, 85, .18); }
+.qty { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.qty button { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass); font-family: var(--tech); font-size: 12px; }
+.qty button[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); background: rgba(255, 209, 102, .12); }
+.qty input { width: 76px; flex: none; padding: 5px 10px; font-family: var(--tech); font-size: 12px; }
+.gift .key { position: absolute; right: 8px; bottom: 8px; font-family: var(--tech); font-size: 10px; line-height: 16px; color: var(--muted); padding: 0 5px; border-radius: 4px; border: 1px solid var(--line); }
+.q-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.list li.q-first { border-color: rgba(255, 209, 102, .5); background: rgba(255, 209, 102, .08); }
+.q-count { font-family: var(--tech); font-size: 13px; color: var(--gold); flex: none; }
+.icon-btn { width: 30px; height: 30px; flex: none; border-radius: 8px; border: 1px solid var(--line); background: none; color: var(--muted); font-size: 13px; }
+.icon-btn:hover { color: var(--ink); border-color: var(--cyan); }
+.keys { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 12px; }
+.keys kbd { margin: 0 2px; background: rgba(255, 255, 255, .1); border: 1px solid var(--line); vertical-align: 0; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--glass); border: 1px solid var(--line); }
+.seg button { padding: 8px 6px; border: 0; border-radius: 9px; background: none; color: var(--muted); display: grid; }
+.seg button small { font-size: 11px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--glass-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--gold); }
+.gift-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) 84px 32px; gap: 6px; align-items: center; }
+.gift-row .key-label { font-family: var(--tech); font-size: 11px; color: var(--muted); text-align: center; }
+.gift-row .field { padding: 7px 9px; }
+.gift-row .x { height: 32px; border-radius: 10px; border: 1px solid var(--line); background: none; color: var(--muted); }
+.gift-row .x:hover { color: var(--magenta); border-color: var(--magenta); }
+.queue-badge .who { color: var(--ink); }
 /* ---------- 手机底部操作坞 ---------- */
 .dock { display: none; }
-.exit-live { display: none; position: fixed; z-index: 10; top: calc(10px + env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); opacity: .2; }
+.exit-live { display: none; position: fixed; z-index: 10; top: calc(10px + env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); opacity: 0; }
 .exit-live:hover, .exit-live:focus-visible { opacity: 1; }
 body.live .app { grid-template-columns: minmax(0, 1fr); }
 body.live .panel, body.live .dock { display: none !important; }
 body.live .exit-live { display: block; }
+body.view .exit-live { display: none; }
 body.live .wheel-wrap { width: min(100%, 72vh, 700px); }
 
 @media (max-width: 900px) {
@@ -212,6 +249,7 @@ body.live .wheel-wrap { width: min(100%, 72vh, 700px); }
   .dock-gifts::-webkit-scrollbar { display: none; }
   .dock .gift { flex: none; min-width: 74px; padding: 8px 10px; scroll-snap-align: start; }
   .dock .gift b { font-size: 13px; }
+  .dock .gift .key { display: none; }
   .spin-btn { flex: none; width: 64px; height: 64px; border-radius: 50%; border: 0; font-family: var(--display); font-size: 26px; color: #2b1a00;
     background: radial-gradient(circle at 35% 30%, #fff6d6, var(--gold) 55%, #d99a1e); box-shadow: 0 0 0 3px rgba(255, 209, 102, .25), 0 0 26px rgba(255, 209, 102, .55); }
   .spin-btn:active { transform: scale(.94); }
@@ -231,7 +269,7 @@ body.live .wheel-wrap { width: min(100%, 72vh, 700px); }
 
     <div class="topbar">
       <span class="live-pill">LIVE</span>
-      <span class="queue-badge">等待转盘 <b id="queueCount">0</b></span>
+      <span class="queue-badge">排队 <b id="queueCount">0</b> 次<span class="who" id="nextWho"></span></span>
     </div>
 
     <header class="stage-head">
@@ -256,36 +294,52 @@ body.live .wheel-wrap { width: min(100%, 72vh, 700px); }
       </div>
     </div>
     <div class="tabs" role="tablist">
-      <button role="tab" data-tab="gift" aria-selected="true">打赏</button>
+      <button role="tab" data-tab="gift" aria-selected="true">打赏排队</button>
       <button role="tab" data-tab="songs" aria-selected="false">歌单</button>
       <button role="tab" data-tab="log" aria-selected="false">记录</button>
       <button role="tab" data-tab="settings" aria-selected="false">设置</button>
     </div>
 
     <div class="tab" data-panel="gift">
-      <div class="group desk-only">
-        <button class="btn primary big" id="manualSpin">主播手动转一次<kbd>SPACE</kbd></button>
-      </div>
-      <div class="group">
-        <h3>模拟观众打赏</h3>
+      <div class="now">
+        <div class="now-status" id="nowStatus" data-s="idle"><span class="lamp"></span><span><strong id="nowTitle">空闲</strong><small id="nowSub"></small></span></div>
+        <button class="btn primary big" id="nextBtn">主播手动转一次</button>
         <div class="row">
-          <input class="field" id="viewer" placeholder="观众昵称（留空随机）" autocomplete="off">
-          <button class="btn" id="randomViewer">随机</button>
+          <button class="btn" id="pauseBtn">暂停排队</button>
+          <button class="btn" id="selfSpin">主播自己转</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>登记抖音打赏</h3>
+        <input class="field" id="viewer" placeholder="粉丝昵称（可留空，记为「神秘粉丝」）" autocomplete="off">
+        <div class="qty" id="qty">
+          <button data-q="1" aria-pressed="true">×1</button>
+          <button data-q="10" aria-pressed="false">×10</button>
+          <button data-q="66" aria-pressed="false">×66</button>
+          <button data-q="188" aria-pressed="false">×188</button>
+          <input class="field" type="number" min="1" id="qtyCustom" placeholder="数量" aria-label="自定义数量">
         </div>
         <div class="gifts" id="gifts"></div>
         <p class="hint" id="ruleHint"></p>
       </div>
-      <label class="switch" for="autoDemo">
-        <span>自动演示<small>每隔几秒随机来一位观众打赏，给客户看效果用</small></span>
-        <input type="checkbox" id="autoDemo">
-      </label>
+
       <div class="group">
-        <h3>等待转盘</h3>
+        <div class="q-head"><h3>排队转盘</h3><span class="hint" id="qSummary"></span></div>
         <ul class="list" id="queueList"></ul>
+        <button class="btn" id="clearQueue">清空排队</button>
       </div>
+
       <div class="group">
-        <h3>观众累计（未满一次的部分）</h3>
+        <h3>粉丝累计（未满一次的部分）</h3>
         <ul class="list" id="balanceList"></ul>
+      </div>
+
+      <div class="keys desk-only">
+        <span><kbd>1</kbd>–<kbd>9</kbd> 登记礼物</span>
+        <span><kbd>Alt</kbd>/<kbd>⌥</kbd>+数字 在昵称框里登记</span>
+        <span><kbd>空格</kbd> 转下一位</span>
+        <span><kbd>P</kbd> 暂停/继续</span>
       </div>
     </div>
 
@@ -312,21 +366,41 @@ body.live .wheel-wrap { width: min(100%, 72vh, 700px); }
 
     <div class="tab" data-panel="settings" hidden>
       <div class="group">
+        <h3>排队方式</h3>
+        <div class="seg" id="queueMode">
+          <button data-mode="auto" aria-pressed="true">连续转<small>有排队就一个接一个自动转</small></button>
+          <button data-mode="manual" aria-pressed="false">唱完再转<small>主播按空格才转下一位</small></button>
+        </div>
+      </div>
+      <div class="group">
         <h3>打赏规则</h3>
-        <label class="num-field" for="coinPerSpin">每满多少币转一次<input class="field" type="number" min="1" id="coinPerSpin"></label>
-        <label class="num-field" for="maxSpins">单次打赏最多转几次<input class="field" type="number" min="1" max="20" id="maxSpins"></label>
+        <label class="num-field" for="coinPerSpin">每满多少抖币转一次<input class="field" type="number" min="1" id="coinPerSpin"></label>
+        <label class="num-field" for="maxSpins">单次打赏最多转几次<input class="field" type="number" min="1" max="50" id="maxSpins"></label>
         <label class="num-field" for="duration">转动时长（秒）<input class="field" type="number" min="2" max="15" id="duration"></label>
+      </div>
+      <div class="group">
+        <h3>礼物与抖币</h3>
+        <p class="hint">示例价格，请按抖音里的实际抖币价格修改。前 9 个礼物对应数字键 1–9。</p>
+        <div class="group" id="giftEditor"></div>
+        <div class="row">
+          <button class="btn" id="addGift">添加礼物</button>
+          <button class="btn" id="resetGifts">恢复示例礼物</button>
+        </div>
       </div>
       <div class="group">
         <h3>玩法</h3>
         <label class="switch" for="noRepeat"><span>唱过的歌暂时移出转盘<small>一轮全部转到后自动放回</small></span><input type="checkbox" id="noRepeat"></label>
         <label class="switch" for="sound"><span>转盘音效</span><input type="checkbox" id="sound"></label>
-        <label class="switch" for="green"><span>绿幕背景<small>在 OBS 里加「色度键」滤镜抠掉背景，转盘浮在画面上</small></span><input type="checkbox" id="green"></label>
+        <label class="switch" for="green"><span>绿幕背景<small>在直播伴侣里加抠图/色度键，转盘浮在画面上</small></span><input type="checkbox" id="green"></label>
       </div>
       <div class="group">
         <h3>推流</h3>
         <button class="btn primary big" id="goLive">进入直播模式</button>
-        <p class="hint">直播模式只显示转盘。用 OBS「窗口采集」抓这个浏览器窗口即可；按 Esc 或点右上角退出。</p>
+        <p class="hint">直播模式只显示转盘。在抖音直播伴侣里添加「窗口」素材，选中这个浏览器窗口；按 Esc 或点右上角退出。控制台建议另开一个窗口操作。</p>
+      </div>
+      <div class="group">
+        <h3>给客户演示</h3>
+        <label class="switch" for="autoDemo"><span>自动演示<small>每隔几秒随机来一位粉丝打赏</small></span><input type="checkbox" id="autoDemo"></label>
       </div>
     </div>
   </aside>
@@ -334,7 +408,7 @@ body.live .wheel-wrap { width: min(100%, 72vh, 700px); }
 
 <nav class="dock" aria-label="快捷操作">
   <div class="dock-gifts" id="dockGifts"></div>
-  <button class="spin-btn" id="dockSpin" aria-label="主播手动转一次">转</button>
+  <button class="spin-btn" id="dockSpin" aria-label="转下一位">转</button>
 </nav>
 <button class="btn exit-live" id="exitLive">退出直播模式</button>
 
@@ -345,9 +419,17 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const mod = (a, n) => ((a % n) + n) % n;
 const rand = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
 const pick = arr => arr[Math.floor(rand() * arr.length)];
+const uid = () => Date.now().toString(36) + Math.floor(rand() * 1e6).toString(36);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+// 控制台窗口是 main，负责所有逻辑；以 #overlay 打开的转盘窗口是 view，只负责显示，由 main 同步
+const ROLE = location.hash === '#overlay' ? 'view' : 'main';
+const bc = 'BroadcastChannel' in window ? new BroadcastChannel('song-wheel') : null;
+const post = m => { try { bc && bc.postMessage(m); } catch (e) {} };
+let viewSeen = 0;
+
 const COLORS = ['#ff3d9a', '#7b3cff', '#22c8ec', '#ffad1f', '#ff5f45', '#1fd59a', '#4d6bff', '#d43dff'];
+const GIFT_COLORS = ['#ff7eb6', '#ff3d6e', '#ffad1f', '#b46bff', '#33e0ff', '#1fd59a', '#ff5f45', '#4d6bff', '#ffd166'];
 const DEFAULT_SONGS = [
   ['晴天', '周杰伦'], ['七里香', '周杰伦'], ['稻香', '周杰伦'], ['告白气球', '周杰伦'],
   ['青花瓷', '周杰伦'], ['夜曲', '周杰伦'], ['简单爱', '周杰伦'], ['搁浅', '周杰伦'],
@@ -355,15 +437,11 @@ const DEFAULT_SONGS = [
   ['需要人陪', '王力宏'], ['你不知道的事', '王力宏'],
 ];
 const defaultSongs = () => DEFAULT_SONGS.map(([title, artist], i) => ({ id: 's' + i, title, artist, weight: 1 }));
-const GIFTS = [
-  { name: '小心心', coin: 1, color: '#ff7eb6', demo: 40 },
-  { name: '玫瑰', coin: 5, color: '#ff3d6e', demo: 25 },
-  { name: '棒棒糖', coin: 10, color: '#ffad1f', demo: 20 },
-  { name: '爱心气球', coin: 30, color: '#b46bff', demo: 10 },
-  { name: '火箭', coin: 100, color: '#33e0ff', demo: 5 },
-];
+const DEFAULT_GIFTS = [['小心心', 1], ['玫瑰', 5], ['棒棒糖', 10], ['爱心气球', 30], ['火箭', 100]];
+const defaultGifts = () => DEFAULT_GIFTS.map(([name, coin], i) => ({ id: 'g' + i, name, coin, color: GIFT_COLORS[i] }));
+const DEMO_WEIGHTS = [40, 25, 20, 10, 5];
 const NAMES = ['晚风', '阿杰', '星河漫步', '小鹿乱撞', '七七', '柠檬不酸', '夜猫子', '一只大橘', '南方有雨', '奶茶三分糖', '老王', '听海'];
-const DEFAULT_SETTINGS = { coinPerSpin: 10, maxSpins: 3, duration: 6, noRepeat: true, sound: true, green: false };
+const DEFAULT_SETTINGS = { coinPerSpin: 10, maxSpins: 3, duration: 6, noRepeat: true, sound: true, green: false, queueMode: 'auto', paused: false };
 
 // ---------- 状态与本地保存 ----------
 const KEY = 'song-wheel-v1';
@@ -371,16 +449,20 @@ let saved = {};
 try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
 const state = {
   songs: Array.isArray(saved.songs) && saved.songs.length ? saved.songs : defaultSongs(),
+  gifts: Array.isArray(saved.gifts) && saved.gifts.length ? saved.gifts : defaultGifts(),
   settings: { ...DEFAULT_SETTINGS, ...(saved.settings || {}) },
   setlist: saved.setlist || [],
   drawn: saved.drawn || [],
   balances: saved.balances || {},
+  queue: saved.queue || [],
 };
 function save() {
+  if (ROLE !== 'main') return;
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  post({ t: 'state', state });
 }
 
-// ---------- 音效 ----------
+// ---------- 音效（有转盘窗口时只在转盘窗口里响） ----------
 let ac = null;
 function audio() {
   if (!state.settings.sound) return null;
@@ -391,6 +473,7 @@ function audio() {
   return ac;
 }
 function blip(freq, dur, type = 'square', vol = .05, when = 0) {
+  if (ROLE === 'main' && Date.now() - viewSeen < 8000) return;
   const a = audio(); if (!a || a.state !== 'running') return;
   const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + when;
   o.type = type; o.frequency.value = freq;
@@ -410,7 +493,7 @@ function buildSegs() {
   const valid = state.songs.filter(s => s.title.trim());
   let active = valid.filter(s => !(state.settings.noRepeat && state.drawn.includes(s.id)));
   if (active.length < 2 && valid.length >= 2) {
-    if (state.drawn.length) toastText('一轮全部转到，歌单已放回转盘');
+    if (state.drawn.length && ROLE === 'main') toastText('一轮全部转到，歌单已放回转盘');
     state.drawn = []; active = valid; save();
   }
   const total = active.reduce((a, s) => a + (+s.weight || 1), 0);
@@ -576,8 +659,7 @@ function hitIndex() {
 }
 
 // ---------- 转动 ----------
-let spin = null, showing = false, lastIdx = -1;
-const queue = [];
+let spin = null, showing = false, showTimer = 0, lastIdx = -1, current = null;
 const ease = p => 1 - Math.pow(1 - p, 4);
 
 function frame(now) {
@@ -586,7 +668,7 @@ function frame(now) {
     rot = spin.from + (spin.to - spin.from) * ease(p);
     const idx = hitIndex();
     if (idx !== lastIdx) { lastIdx = idx; kick = 1; sfx.tick(); }
-    if (p >= 1) { const s = spin; spin = null; onSpinEnd(s); }
+    if (p >= 1) { const s = spin; spin = null; onSpinEnd(s.p); }
   }
   kick *= .82;
   draw(now);
@@ -594,47 +676,96 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-function enqueue(req) { queue.push(req); renderQueue(); pump(); }
-function pump() {
-  if (spin || showing || !queue.length || segs.length < 2) return;
-  startSpin(queue.shift());
-  renderQueue();
-}
+const idle = () => !spin && !showing && segs.length >= 2;
+// main 决定转到哪首，再把同样的参数发给转盘窗口，两边停在同一个位置
 function startSpin(req) {
   const x = rand() * TAU;
   const seg = segs.find(s => x >= s.start && x < s.end) || segs[segs.length - 1];
-  const w = seg.end - seg.start, theta = seg.start + w * .15 + rand() * w * .7;
-  const turns = reduceMotion ? 1 : 5 + Math.floor(rand() * 3);
-  const dur = reduceMotion ? 1200 : state.settings.duration * 1000;
-  spin = { from: rot, to: rot + turns * TAU + mod(-theta - rot, TAU), t0: performance.now(), dur, req, seg };
+  const w = seg.end - seg.start;
+  const p = {
+    req, theta: seg.start + w * .15 + rand() * w * .7,
+    turns: reduceMotion ? 1 : 5 + Math.floor(rand() * 3),
+    dur: reduceMotion ? 1200 : state.settings.duration * 1000,
+    song: { id: seg.song.id, title: seg.song.title, artist: seg.song.artist },
+  };
+  current = req;
+  post({ t: 'spin', p });
+  runSpin(p);
+  renderNow();
+}
+function runSpin(p) {
+  spin = { from: rot, to: rot + p.turns * TAU + mod(-p.theta - rot, TAU), t0: performance.now(), dur: p.dur, p };
   $('#wheelWrap').classList.add('spinning');
 }
-function onSpinEnd(s) {
+function onSpinEnd(p) {
   showing = true;
   $('#wheelWrap').classList.remove('spinning');
   rot = mod(rot, TAU);
-  const song = s.seg.song;
-  highlightId = song.id;
-  state.setlist.push({ id: Date.now() + '' + Math.floor(rand() * 1e4), title: song.title, artist: song.artist, by: s.req.name, gift: s.req.gift, at: Date.now(), done: false });
-  if (state.settings.noRepeat) state.drawn.push(song.id);
-  save();
+  highlightId = p.song.id;
+  if (ROLE === 'main') {
+    state.setlist.push({ id: uid(), title: p.song.title, artist: p.song.artist, by: p.req.name, gift: p.req.gift, at: Date.now(), done: false });
+    if (state.settings.noRepeat) state.drawn.push(p.song.id);
+    save();
+  }
   const b = $('#banner');
   b.innerHTML = `
-    <p class="thanks">${s.req.gift ? `感谢 <b>${esc(s.req.name)}</b> 送出的${esc(s.req.gift)}` : '主播手动转盘'}</p>
+    <p class="thanks">${p.req.gift ? `感谢 <b>${esc(p.req.name)}</b> 送出的${esc(p.req.gift)}` : '主播手动转盘'}</p>
     <p class="label">NEXT SONG</p>
-    <p class="song">《${esc(song.title)}》</p>
-    <p class="artist">${esc(song.artist || '')}</p>`;
+    <p class="song">《${esc(p.song.title)}》</p>
+    <p class="artist">${esc(p.song.artist || '')}</p>`;
   b.hidden = false;
   sfx.win(); burst();
-  renderLog(); renderUpnext();
-  setTimeout(() => {
-    b.hidden = true; highlightId = null; showing = false;
-    buildSegs(); renderSongs(); pump();
-  }, 4200);
+  renderLog(); renderUpnext(); renderNow();
+  showTimer = setTimeout(endShow, 4200);
+}
+function endShow() {
+  clearTimeout(showTimer);
+  $('#banner').hidden = true; highlightId = null; showing = false; current = null;
+  buildSegs(); renderSongs();
+  if (ROLE === 'main') pump();
+  renderNow();
 }
 
-// ---------- 打赏 ----------
+// ---------- 排队 ----------
+const totalSpins = () => state.queue.reduce((a, q) => a + q.count, 0);
+function enqueue(name, gift, count, front = false) {
+  const q = state.queue, tail = q[q.length - 1];
+  if (!front && tail && tail.name === name && tail.gift === gift) tail.count += count;
+  else {
+    const e = { id: uid(), name, gift, count, at: Date.now() };
+    front ? q.unshift(e) : q.push(e);
+  }
+  save(); renderQueue(); pump();
+}
+// force：主播按空格/按钮时，不管是「唱完再转」还是暂停，都直接转下一位
+function pump(force = false) {
+  if (!idle() || !state.queue.length) return false;
+  if (!force && (state.settings.paused || state.settings.queueMode === 'manual')) return false;
+  const head = state.queue[0];
+  head.count -= 1;
+  if (head.count <= 0) state.queue.shift();
+  save();
+  startSpin({ name: head.name, gift: head.gift });
+  renderQueue();
+  return true;
+}
+function nextAction() {
+  if (!idle()) return;
+  if (!pump(true)) startSpin({ name: '主播', gift: null });
+}
+function selfSpin() {
+  if (idle()) startSpin({ name: '主播', gift: null });
+  else enqueue('主播', null, 1, true);
+}
+function togglePause() {
+  state.settings.paused = !state.settings.paused;
+  save(); renderNow();
+  if (!state.settings.paused) pump();
+}
+
+// ---------- 打赏登记 ----------
 function feedItem(html, cls = '') {
+  if (ROLE === 'main') post({ t: 'feed', html, cls });
   const item = document.createElement('div');
   item.className = 'feed-item ' + cls;
   item.innerHTML = html;
@@ -645,18 +776,29 @@ function feedItem(html, cls = '') {
 }
 const toastText = text => feedItem(esc(text), 'sys');
 
-function sendGift(name, gift) {
-  name = name.trim() || pick(NAMES);
+function sendGift(name, gift, qty = 1) {
+  name = name.trim() || '神秘粉丝';
   const { coinPerSpin: N, maxSpins: M } = state.settings;
-  let bal = (state.balances[name] || 0) + gift.coin;
+  let bal = (state.balances[name] || 0) + gift.coin * qty;
   let spins = Math.floor(bal / N);
   if (spins > M) { spins = M; bal = bal % N; } else bal -= spins * N;
   if (bal > 0) state.balances[name] = bal; else delete state.balances[name];
   save();
   sfx.gift();
-  feedItem(`<i class="gdot" style="background:${gift.color};color:${gift.color}"></i><span><b>${esc(name)}</b> 送出 ${esc(gift.name)} · ${spins ? `<em>转盘 +${spins}</em>` : `累计 ${bal}/${N}`}</span>`);
-  for (let i = 0; i < spins; i++) enqueue({ name, gift: gift.name });
+  feedItem(`<i class="gdot" style="background:${gift.color};color:${gift.color}"></i><span><b>${esc(name)}</b> 送出 ${esc(gift.name)}${qty > 1 ? ` ×${qty}` : ''} · ${spins ? `<em>转盘 +${spins}</em>` : `累计 ${bal}/${N}`}</span>`);
+  if (spins) enqueue(name, gift.name, spins);
   renderBalances();
+}
+let qty = 1;
+const currentQty = () => Math.max(1, Math.round(+$('#qtyCustom').value) || qty);
+function setQty(q) {
+  qty = q; $('#qtyCustom').value = '';
+  document.querySelectorAll('#qty [data-q]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.q === q));
+}
+function registerGift(gift) {
+  sendGift($('#viewer').value, gift, currentQty());
+  $('#viewer').value = '';
+  setQty(1);
 }
 
 let demoTimer = null;
@@ -665,10 +807,11 @@ function setDemo(on) {
   if (!on) return;
   (function loop() {
     demoTimer = setTimeout(() => {
-      if (queue.length < 3) {
-        let x = rand() * 100, g = GIFTS[0];
-        for (const gi of GIFTS) { if ((x -= gi.demo) < 0) { g = gi; break; } }
-        sendGift(pick(NAMES), g);
+      if (totalSpins() < 4) {
+        const ws = state.gifts.map((g, i) => DEMO_WEIGHTS[i] || 5);
+        let x = rand() * ws.reduce((a, b) => a + b, 0), g = state.gifts[0];
+        for (let i = 0; i < ws.length; i++) { if ((x -= ws[i]) < 0) { g = state.gifts[i]; break; } }
+        if (g) sendGift(pick(NAMES), g, rand() < .15 ? 10 : 1);
       }
       loop();
     }, 2500 + rand() * 4500);
@@ -676,28 +819,71 @@ function setDemo(on) {
 }
 
 // ---------- 界面渲染 ----------
+function ago(t) {
+  const m = Math.floor((Date.now() - t) / 60000);
+  return m < 1 ? '刚刚' : `等了 ${m} 分钟`;
+}
 function renderRule() {
   const { coinPerSpin: N, maxSpins: M } = state.settings;
-  $('#ruleChip').innerHTML = `打赏每满 <b>${N}</b> 币转一次 · 转到哪首唱哪首`;
-  $('#ruleHint').textContent = `规则：每满 ${N} 币转一次，单次打赏最多转 ${M} 次，不足 ${N} 币的部分会累计。`;
+  $('#ruleChip').innerHTML = `打赏每满 <b>${N}</b> 抖币转一次 · 转到哪首唱哪首`;
+  $('#ruleHint').textContent = `每满 ${N} 抖币转一次，单次打赏最多转 ${M} 次，不足部分按粉丝累计。`;
 }
 function renderGifts() {
-  const html = GIFTS.map((g, i) => `
-    <button class="gift" data-gift="${i}" style="--c:${g.color}"><span class="dot"></span><b>${g.name}</b><small>${g.coin} 币</small></button>`).join('');
+  const html = state.gifts.map((g, i) => `
+    <button class="gift" data-gift="${i}" style="--c:${g.color}"><span class="dot"></span><b>${esc(g.name)}</b><small>${g.coin} 抖币</small>${i < 9 ? `<span class="key">${i + 1}</span>` : ''}</button>`).join('');
   $('#gifts').innerHTML = html;
   $('#dockGifts').innerHTML = html;
 }
+function renderGiftEditor() {
+  $('#giftEditor').innerHTML = state.gifts.map((g, i) => `<div class="gift-row" data-gid="${g.id}">
+      <span class="key-label">${i < 9 ? i + 1 : '–'}</span>
+      <input class="field" id="gn-${g.id}" data-k="name" value="${esc(g.name)}" placeholder="礼物名">
+      <input class="field" id="gc-${g.id}" data-k="coin" type="number" min="1" value="${g.coin}" aria-label="${esc(g.name)} 抖币">
+      <button class="x" data-gdel="${g.id}" aria-label="删除 ${esc(g.name)}">✕</button>
+    </div>`).join('');
+}
+function renderNow() {
+  const st = $('#nowStatus'), q = state.queue, total = totalSpins();
+  let s = 'idle', title = '空闲', sub = '有粉丝打赏就登记一下';
+  if (spin || showing) {
+    s = 'spinning';
+    title = current ? (current.gift ? `正在转：${current.name}` : '正在转：主播手动') : '正在转';
+    sub = current && current.gift ? `${current.gift} · 后面还有 ${total} 次` : `后面还有 ${total} 次`;
+  } else if (state.settings.paused) {
+    s = 'paused'; title = '已暂停'; sub = total ? `排队 ${total} 次，按 P 继续` : '新的打赏会继续排队';
+  } else if (q.length) {
+    s = 'waiting'; title = `等待转下一位：${q[0].name}`; sub = `${q[0].gift || '主播'} · 剩 ${q[0].count} 次 · 按空格开始`;
+  }
+  st.dataset.s = s;
+  $('#nowTitle').textContent = title;
+  $('#nowSub').textContent = sub;
+  const nb = $('#nextBtn');
+  nb.innerHTML = q.length ? `转下一位：${esc(q[0].name)}<kbd>空格</kbd>` : '主播手动转一次<kbd>空格</kbd>';
+  nb.disabled = !idle();
+  const pb = $('#pauseBtn');
+  pb.innerHTML = state.settings.paused ? '继续排队<kbd>P</kbd>' : '暂停排队<kbd>P</kbd>';
+  pb.classList.toggle('on', state.settings.paused);
+  document.querySelectorAll('#queueMode [data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === state.settings.queueMode));
+}
 function renderQueue() {
-  $('#queueCount').textContent = queue.length;
-  $('#queueList').innerHTML = queue.length
-    ? queue.map((q, i) => `<li><span class="num">${i + 1}</span><span class="grow">${esc(q.name)}</span><span class="sub">${esc(q.gift || '手动')}</span></li>`).join('')
-    : '<li class="empty">暂无，观众打赏后会排在这里</li>';
+  const q = state.queue, total = totalSpins();
+  $('#queueCount').textContent = total;
+  $('#nextWho').textContent = q.length ? ` · 下一位 ${q[0].name}` : '';
+  $('#qSummary').textContent = q.length ? `${q.length} 位 · 共 ${total} 次` : '';
+  $('#queueList').innerHTML = q.length
+    ? q.map((e, i) => `<li class="${i === 0 ? 'q-first' : ''}"><span class="num">${i + 1}</span>
+        <span class="grow">${esc(e.name)}<div class="sub">${esc(e.gift || '主播')} · ${ago(e.at)}</div></span>
+        <span class="q-count">×${e.count}</span>
+        ${i > 0 ? `<button class="icon-btn" data-top="${e.id}" aria-label="把 ${esc(e.name)} 移到最前" title="置顶">↑</button>` : ''}
+        <button class="icon-btn" data-qdel="${e.id}" aria-label="把 ${esc(e.name)} 移出排队" title="移出">✕</button></li>`).join('')
+    : '<li class="empty">暂无排队，粉丝打赏后登记就会排在这里</li>';
+  renderNow();
 }
 function renderBalances() {
   const N = state.settings.coinPerSpin;
   const rows = Object.entries(state.balances).sort((a, b) => b[1] - a[1]).slice(0, 6);
   $('#balanceList').innerHTML = rows.length
-    ? rows.map(([n, b]) => `<li><span class="grow">${esc(n)}<div class="bar"><i style="width:${Math.min(100, b / N * 100)}%"></i></div></span><span class="sub">${b}/${N} 币</span></li>`).join('')
+    ? rows.map(([n, b]) => `<li><span class="grow">${esc(n)}<div class="bar"><i style="width:${Math.min(100, b / N * 100)}%"></i></div></span><span class="sub">${b}/${N} 抖币</span></li>`).join('')
     : '<li class="empty">暂无</li>';
 }
 function renderUpnext() {
@@ -735,41 +921,82 @@ function renderSettings() {
   ['noRepeat', 'sound', 'green'].forEach(k => $('#' + k).checked = s[k]);
   document.body.classList.toggle('green', s.green);
 }
+function renderAll() {
+  renderRule(); renderGifts(); renderGiftEditor(); renderQueue(); renderBalances();
+  renderUpnext(); renderLog(); renderSongs(); renderSettings();
+}
+
+// 两次点击确认，避免误清空
+function armed(btn, label, fn) {
+  let on = false, t = 0;
+  btn.onclick = () => {
+    if (!on) { on = true; btn.textContent = '再点一次确认'; t = setTimeout(() => { on = false; btn.textContent = label; }, 3000); return; }
+    clearTimeout(t); on = false; btn.textContent = label; fn();
+  };
+}
 
 // ---------- 事件 ----------
+// 鼠标点过的按钮立即失焦，避免之后按空格又触发一次
+document.addEventListener('click', e => { const b = e.target.closest('button'); if (b && e.detail > 0) b.blur(); });
 document.querySelector('.tabs').addEventListener('click', e => {
   const b = e.target.closest('[data-tab]'); if (!b) return;
   document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
   document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== b.dataset.tab);
 });
-const manual = () => enqueue({ name: '主播', gift: null });
-$('#manualSpin').onclick = manual;
-$('#dockSpin').onclick = manual;
+$('#nextBtn').onclick = nextAction;
+$('#dockSpin').onclick = nextAction;
+$('#selfSpin').onclick = selfSpin;
+$('#pauseBtn').onclick = togglePause;
 cv.addEventListener('click', e => {
+  if (ROLE !== 'main') return;
   const r = cv.getBoundingClientRect();
   const dx = e.clientX - r.left - r.width / 2, dy = e.clientY - r.top - r.height / 2;
-  if (Math.hypot(dx, dy) < r.width / 2 * .8 * .24) manual();
+  if (Math.hypot(dx, dy) < r.width / 2 * .8 * .24) nextAction();
 });
 document.addEventListener('keydown', e => {
-  if (e.target.matches('input, select, textarea, button')) return;
-  if (e.code === 'Space') { e.preventDefault(); manual(); }
-  if (e.key === 'Escape' && location.hash === '#overlay') location.hash = '';
+  if (ROLE !== 'main' || e.metaKey || e.ctrlKey) return;
+  const inField = e.target.matches('input, select, textarea');
+  const m = e.code.match(/^(Digit|Numpad)([1-9])$/);
+  if (m && (e.altKey || !inField)) {
+    const g = state.gifts[+m[2] - 1];
+    if (g) { e.preventDefault(); registerGift(g); }
+    return;
+  }
+  if (inField) return;
+  if (e.code === 'Space') { e.preventDefault(); nextAction(); }
+  else if (e.code === 'KeyP') togglePause();
+  else if (e.key === 'Escape' && location.hash === '#overlay') location.hash = '';
 });
 const onGift = e => {
   const b = e.target.closest('[data-gift]'); if (!b) return;
-  sendGift($('#viewer').value, GIFTS[+b.dataset.gift]);
+  registerGift(state.gifts[+b.dataset.gift]);
 };
 $('#gifts').addEventListener('click', onGift);
 $('#dockGifts').addEventListener('click', onGift);
-$('#randomViewer').onclick = () => { $('#viewer').value = pick(NAMES); };
+$('#qty').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) setQty(+b.dataset.q); });
+$('#qtyCustom').addEventListener('input', () => document.querySelectorAll('#qty [data-q]').forEach(b => b.setAttribute('aria-pressed', 'false')));
 $('#autoDemo').onchange = e => setDemo(e.target.checked);
+
+$('#queueList').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const q = state.queue;
+  if (b.dataset.top) { const i = q.findIndex(x => x.id === b.dataset.top); if (i > 0) q.unshift(q.splice(i, 1)[0]); }
+  if (b.dataset.qdel) state.queue = q.filter(x => x.id !== b.dataset.qdel);
+  save(); renderQueue();
+});
+armed($('#clearQueue'), '清空排队', () => { state.queue = []; save(); renderQueue(); });
+$('#queueMode').addEventListener('click', e => {
+  const b = e.target.closest('[data-mode]'); if (!b) return;
+  state.settings.queueMode = b.dataset.mode;
+  save(); renderNow(); pump();
+});
 
 $('#songList').addEventListener('input', e => {
   const row = e.target.closest('[data-id]'), k = e.target.dataset.k; if (!row || !k) return;
   const song = state.songs.find(s => s.id === row.dataset.id);
   song[k] = k === 'weight' ? +e.target.value : e.target.value;
-  save();
   if (!spin && !showing) buildSegs();
+  save();
   document.querySelectorAll('#songList .song-row').forEach(r => {
     const sw = r.querySelector('.swatch'), c = colorOf(r.dataset.id);
     sw.style.background = c; sw.style.color = c;
@@ -779,7 +1006,8 @@ $('#songList').addEventListener('click', e => {
   const id = e.target.dataset.del; if (!id) return;
   state.songs = state.songs.filter(s => s.id !== id);
   state.drawn = state.drawn.filter(d => d !== id);
-  save(); if (!spin && !showing) buildSegs(); renderSongs();
+  if (!spin && !showing) buildSegs();
+  save(); renderSongs();
 });
 $('#addSong').onclick = () => {
   const id = 's' + Date.now();
@@ -789,21 +1017,39 @@ $('#addSong').onclick = () => {
 };
 $('#resetSongs').onclick = () => {
   state.songs = defaultSongs(); state.drawn = [];
-  save(); if (!spin && !showing) buildSegs(); renderSongs();
+  if (!spin && !showing) buildSegs();
+  save(); renderSongs();
 };
+
+$('#giftEditor').addEventListener('input', e => {
+  const row = e.target.closest('[data-gid]'), k = e.target.dataset.k; if (!row || !k) return;
+  const g = state.gifts.find(x => x.id === row.dataset.gid);
+  g[k] = k === 'coin' ? Math.max(1, Math.round(+e.target.value) || 1) : e.target.value;
+  save(); renderGifts();
+});
+$('#giftEditor').addEventListener('click', e => {
+  const id = e.target.dataset.gdel; if (!id) return;
+  state.gifts = state.gifts.filter(g => g.id !== id);
+  save(); renderGifts(); renderGiftEditor();
+});
+$('#addGift').onclick = () => {
+  const id = 'g' + Date.now();
+  state.gifts.push({ id, name: '', coin: 1, color: GIFT_COLORS[state.gifts.length % GIFT_COLORS.length] });
+  save(); renderGifts(); renderGiftEditor();
+  document.getElementById('gn-' + id).focus();
+};
+$('#resetGifts').onclick = () => { state.gifts = defaultGifts(); save(); renderGifts(); renderGiftEditor(); };
 
 $('#logList').addEventListener('click', e => {
   const id = e.target.dataset.done; if (!id) return;
   const item = state.setlist.find(s => s.id === id); item.done = !item.done;
   save(); renderLog(); renderUpnext();
 });
-let clearArmed = false;
-$('#clearLog').onclick = e => {
-  if (!clearArmed) { clearArmed = true; e.target.textContent = '再点一次确认清空'; setTimeout(() => { clearArmed = false; e.target.textContent = '清空记录，开始新一场'; }, 3000); return; }
-  clearArmed = false; e.target.textContent = '清空记录，开始新一场';
+armed($('#clearLog'), '清空记录，开始新一场', () => {
   state.setlist = []; state.drawn = []; state.balances = {};
-  save(); if (!spin && !showing) buildSegs(); renderLog(); renderUpnext(); renderSongs(); renderBalances();
-};
+  if (!spin && !showing) buildSegs();
+  save(); renderLog(); renderUpnext(); renderSongs(); renderBalances();
+});
 
 ['coinPerSpin', 'maxSpins', 'duration'].forEach(k => $('#' + k).addEventListener('change', e => {
   const v = Math.max(+e.target.min || 1, Math.min(+e.target.max || 9999, Math.round(+e.target.value) || DEFAULT_SETTINGS[k]));
@@ -812,18 +1058,53 @@ $('#clearLog').onclick = e => {
 ['noRepeat', 'sound', 'green'].forEach(k => $('#' + k).addEventListener('change', e => {
   state.settings[k] = e.target.checked;
   if (k === 'noRepeat' && !e.target.checked) state.drawn = [];
+  if (k === 'noRepeat' && !spin && !showing) buildSegs();
   save(); renderSettings();
-  if (k === 'noRepeat' && !spin && !showing) { buildSegs(); renderSongs(); }
+  if (k === 'noRepeat') renderSongs();
 }));
 
-const syncLive = () => document.body.classList.toggle('live', location.hash === '#overlay');
-$('#goLive').onclick = () => { location.hash = 'overlay'; };
+// 直播模式：优先弹出一个只有转盘的窗口给直播伴侣采集；弹窗被拦截时退回本窗口全屏转盘
+const syncLive = () => document.body.classList.toggle('live', ROLE === 'view' || location.hash === '#overlay');
+$('#goLive').onclick = () => {
+  const w = window.open(location.href.split('#')[0] + '#overlay', 'song-wheel-overlay', 'width=960,height=960');
+  if (!w) location.hash = 'overlay';
+};
 $('#exitLive').onclick = () => { location.hash = ''; };
 window.addEventListener('hashchange', syncLive);
 
+// ---------- 窗口同步 ----------
+if (bc) bc.onmessage = ({ data: m }) => {
+  if (ROLE === 'view') {
+    if (m.t === 'state') {
+      Object.assign(state, m.state);
+      if (!spin && !showing) buildSegs();
+      renderAll();
+    } else if (m.t === 'spin') {
+      if (showing) endShow();
+      buildSegs();
+      current = m.p.req;
+      runSpin(m.p);
+    } else if (m.t === 'feed') {
+      feedItem(m.html, m.cls);
+      if (m.cls !== 'sys') sfx.gift();
+    }
+  } else if (m.t === 'hello') {
+    viewSeen = Date.now();
+    if (m.first) post({ t: 'state', state });
+  }
+};
+if (ROLE === 'view') {
+  document.body.classList.add('view');
+  post({ t: 'hello', first: true });
+  setInterval(() => post({ t: 'hello' }), 3000);
+} else {
+  setInterval(renderQueue, 30000);
+}
+
 // ---------- 启动 ----------
 buildSegs();
-renderRule(); renderGifts(); renderQueue(); renderBalances(); renderUpnext(); renderLog(); renderSongs(); renderSettings(); syncLive();
+renderAll(); syncLive();
 resize();
 requestAnimationFrame(frame);
+if (ROLE === 'main' && state.queue.length) pump();
 </script>
