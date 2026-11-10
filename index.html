@@ -1,0 +1,829 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>点歌转盘</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0b0820">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<!-- 字体异步加载：国内访问不到 Google Fonts 时不阻塞页面，直接用系统字体 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&family=Orbitron:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<style>
+/* 布局：霓虹舞台（极光背景 + 发光转盘）占主区，右侧玻璃质感控制台；手机端控制台下沉，底部固定「礼物 + 转」操作坞；#overlay 直播模式只留舞台 */
+:root {
+  --bg: #0b0820;
+  --bg-2: #160f3a;
+  --glass: rgba(255, 255, 255, .06);
+  --glass-2: rgba(255, 255, 255, .1);
+  --line: rgba(200, 185, 255, .16);
+  --ink: #f6f2ff;
+  --muted: #a99fd6;
+  --magenta: #ff3d9a;
+  --violet: #7b3cff;
+  --cyan: #33e0ff;
+  --gold: #ffd166;
+  --live: #ff2d55;
+  --key: #00b140;
+  --display: "ZCOOL QingKe HuangYou", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --tech: "Orbitron", "PingFang SC", system-ui, sans-serif;
+  --body: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5; -webkit-tap-highlight-color: transparent; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 390px; height: 100%; }
+
+/* ---------- 舞台 ---------- */
+.stage {
+  position: relative; overflow: hidden; min-width: 0; isolation: isolate;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding-block: 16px 18px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: radial-gradient(ellipse 80% 60% at 50% 35%, var(--bg-2), var(--bg) 70%);
+}
+.aurora { position: absolute; inset: -20%; z-index: -2; pointer-events: none; filter: blur(70px); opacity: .55; }
+.aurora i { position: absolute; width: 46%; aspect-ratio: 1; border-radius: 50%; animation: drift 18s ease-in-out infinite alternate; }
+.aurora i:nth-child(1) { background: var(--magenta); left: 8%; top: 12%; }
+.aurora i:nth-child(2) { background: var(--violet); right: 6%; top: 4%; animation-delay: -6s; }
+.aurora i:nth-child(3) { background: var(--cyan); left: 30%; bottom: 2%; width: 36%; opacity: .6; animation-delay: -12s; }
+@keyframes drift { to { transform: translate(8%, 10%) scale(1.15); } }
+.floor { position: absolute; left: -50%; right: -50%; bottom: -10%; height: 42%; z-index: -1; pointer-events: none;
+  background-image: linear-gradient(rgba(51, 224, 255, .22) 1px, transparent 1px), linear-gradient(90deg, rgba(51, 224, 255, .22) 1px, transparent 1px);
+  background-size: 48px 48px; transform: perspective(380px) rotateX(62deg); transform-origin: bottom;
+  mask-image: linear-gradient(to top, #000 10%, transparent 90%); -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 90%); }
+body.green .stage { background: var(--key); }
+body.green .aurora, body.green .floor { display: none; }
+#fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
+
+.topbar { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.live-pill { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 10px; border-radius: 999px; background: rgba(255, 45, 85, .16); border: 1px solid rgba(255, 45, 85, .5); font-family: var(--tech); font-size: 12px; font-weight: 800; letter-spacing: .18em; color: #ffd6df; }
+.live-pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--live); box-shadow: 0 0 10px var(--live); animation: blink 1.2s infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.queue-badge { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); font-size: 12px; color: var(--muted); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.queue-badge b { font-family: var(--tech); color: var(--gold); font-size: 16px; font-variant-numeric: tabular-nums; }
+
+.stage-head { text-align: center; display: grid; gap: 8px; }
+.stage-head h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(34px, 4.8vw, 58px); line-height: 1.05; letter-spacing: .04em; text-wrap: balance;
+  background: linear-gradient(100deg, #fff 0%, #ffd0ea 30%, var(--gold) 55%, #fff 75%, var(--cyan) 100%); background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: sheen 6s linear infinite;
+  filter: drop-shadow(0 0 18px rgba(255, 61, 154, .45)); }
+@keyframes sheen { to { background-position: -220% 0; } }
+.rule-chip { justify-self: center; padding: 4px 16px; border-radius: 999px; background: linear-gradient(90deg, rgba(255, 61, 154, .22), rgba(123, 60, 255, .22)); border: 1px solid rgba(255, 61, 154, .45); color: #ffe0ee; font-size: 13px; letter-spacing: .06em; }
+.rule-chip b { font-family: var(--tech); color: var(--gold); }
+
+.wheel-wrap { position: relative; width: min(100%, 62vh, 580px); aspect-ratio: 1; max-width: 100%; flex: none; }
+.halo { position: absolute; inset: 1%; border-radius: 50%; z-index: -1; filter: blur(22px); opacity: .85;
+  background: conic-gradient(from 0deg, var(--magenta), var(--violet), var(--cyan), var(--gold), var(--magenta)); animation: spin 9s linear infinite; }
+.spinning .halo { animation-duration: 1.4s; opacity: 1; }
+@keyframes spin { to { transform: rotate(1turn); } }
+#wheel { width: 100%; height: 100%; display: block; cursor: pointer; position: relative; }
+
+.banner {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3;
+  width: min(94%, 440px); padding: 18px 20px 22px; text-align: center; border-radius: 22px; border: 2px solid transparent;
+  background: linear-gradient(rgba(14, 10, 38, .94), rgba(14, 10, 38, .94)) padding-box, linear-gradient(120deg, var(--magenta), var(--gold), var(--cyan)) border-box;
+  box-shadow: 0 0 40px rgba(255, 61, 154, .45), 0 0 90px rgba(51, 224, 255, .25), 0 24px 60px rgba(0, 0, 0, .6);
+  animation: pop .55s cubic-bezier(.2, 1.5, .4, 1);
+}
+.banner .thanks { margin: 0; color: var(--muted); font-size: 14px; }
+.banner .thanks b { color: var(--magenta); font-weight: 600; }
+.banner .label { margin: 10px 0 0; font-family: var(--tech); font-size: 11px; font-weight: 800; letter-spacing: .5em; color: var(--cyan); }
+.banner .song { margin: 4px 0 0; font-family: var(--display); font-size: clamp(38px, 7vw, 60px); line-height: 1.1; color: #fff; text-shadow: 0 0 22px rgba(255, 209, 102, .65); }
+.banner .artist { margin: 4px 0 0; color: var(--gold); letter-spacing: .1em; }
+@keyframes pop { from { transform: translate(-50%, -50%) scale(.5) rotate(-6deg); opacity: 0; } }
+
+.upnext { width: min(100%, 680px); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; min-height: 34px; }
+.upnext .tag { font-family: var(--tech); font-size: 11px; font-weight: 800; letter-spacing: .3em; color: var(--cyan); }
+.upnext .chip { display: inline-flex; gap: 6px; align-items: baseline; padding: 5px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.upnext .chip:first-of-type { border-color: rgba(255, 209, 102, .6); box-shadow: 0 0 16px rgba(255, 209, 102, .25); }
+.upnext .chip i { font-style: normal; font-family: var(--tech); font-size: 12px; color: var(--gold); }
+.upnext .chip small { color: var(--muted); }
+.upnext .empty { color: var(--muted); font-size: 13px; }
+
+.feed { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: 64px; display: grid; gap: 6px; width: min(280px, 42%); pointer-events: none; z-index: 5; }
+.feed-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px 7px 8px; border-radius: 999px; font-size: 13px;
+  background: linear-gradient(90deg, rgba(255, 61, 154, .35), rgba(14, 10, 38, .75) 70%); border: 1px solid rgba(255, 61, 154, .35);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: slide .4s cubic-bezier(.2, 1.3, .4, 1), fade .5s ease-in 3.6s forwards; }
+.feed-item .gdot { width: 22px; height: 22px; border-radius: 50%; flex: none; box-shadow: 0 0 10px currentColor; }
+.feed-item span { min-width: 0; }
+.feed-item b { color: #fff; font-weight: 600; }
+.feed-item em { font-style: normal; font-family: var(--tech); font-size: 12px; color: var(--gold); }
+.feed-item.sys { background: rgba(14, 10, 38, .8); border-color: var(--line); padding-left: 12px; }
+@keyframes slide { from { transform: translateX(-30px); opacity: 0; } }
+@keyframes fade { to { opacity: 0; transform: translateY(-6px); } }
+
+/* ---------- 控制台 ---------- */
+.panel { position: relative; background: linear-gradient(180deg, rgba(22, 15, 58, .96), rgba(11, 8, 32, .98)); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.panel-head { padding: 18px 20px 0; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.panel-head h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.panel-head p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 14px 16px 0; padding: 4px; border-radius: 12px; background: var(--glass); border: 1px solid var(--line); }
+.tabs button { padding: 7px 4px; background: none; border: 0; border-radius: 9px; color: var(--muted); }
+.tabs button[aria-selected="true"] { color: #fff; background: linear-gradient(120deg, var(--magenta), var(--violet)); box-shadow: 0 4px 16px rgba(255, 61, 154, .35); }
+.tab { padding: 18px 20px 28px; overflow: auto; display: grid; gap: 20px; align-content: start; flex: 1; min-height: 0; }
+.group { display: grid; gap: 10px; }
+.group > h3 { margin: 0; font-family: var(--tech); font-size: 11px; font-weight: 600; letter-spacing: .16em; color: var(--cyan); }
+.hint { margin: 0; color: var(--muted); font-size: 12px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.field { flex: 1; min-width: 0; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0, 0, 0, .25); }
+.field:focus { border-color: var(--cyan); outline: none; box-shadow: 0 0 0 3px rgba(51, 224, 255, .15); }
+.btn { padding: 9px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--glass); white-space: nowrap; transition: border-color .15s, background .15s; }
+.btn:hover { border-color: rgba(51, 224, 255, .55); background: var(--glass-2); }
+.btn.primary { border: 0; color: #fff; font-weight: 600; background: linear-gradient(120deg, var(--magenta), var(--violet) 60%, #4d6bff); box-shadow: 0 6px 24px rgba(255, 61, 154, .35), inset 0 1px 0 rgba(255, 255, 255, .25); }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn.big { width: 100%; padding: 14px; font-size: 16px; letter-spacing: .06em; }
+kbd { font-family: var(--tech); font-size: 10px; padding: 2px 6px; border-radius: 5px; background: rgba(255, 255, 255, .18); margin-left: 8px; vertical-align: 2px; }
+
+.gifts { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 8px; }
+.gift { position: relative; overflow: hidden; display: grid; gap: 2px; justify-items: start; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--glass); text-align: left; transition: transform .12s, border-color .15s; }
+.gift::after { content: ""; position: absolute; right: -18px; top: -18px; width: 56px; height: 56px; border-radius: 50%; background: var(--c); opacity: .28; filter: blur(10px); }
+.gift:hover { border-color: var(--c); }
+.gift:active { transform: scale(.96); }
+.gift .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+.gift b { font-weight: 600; }
+.gift small { font-family: var(--tech); color: var(--muted); font-size: 11px; }
+
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); cursor: pointer; }
+.switch span small { display: block; color: var(--muted); font-size: 12px; }
+.switch input { appearance: none; -webkit-appearance: none; width: 42px; height: 24px; border-radius: 999px; background: rgba(255, 255, 255, .15); position: relative; flex: none; cursor: pointer; transition: background .2s; }
+.switch input::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.switch input:checked { background: linear-gradient(90deg, var(--magenta), var(--violet)); }
+.switch input:checked::after { transform: translateX(18px); }
+
+.list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.list li { display: flex; gap: 10px; align-items: center; padding: 9px 12px; border-radius: 12px; background: var(--glass); border: 1px solid transparent; font-size: 13px; }
+.list li .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.list li .sub { color: var(--muted); font-size: 12px; }
+.list .num { font-family: var(--tech); font-size: 12px; color: var(--gold); width: 1.8em; text-align: right; flex: none; }
+.list li.done .grow { opacity: .4; text-decoration: line-through; }
+.list .empty { justify-content: center; color: var(--muted); background: none; border: 1px dashed var(--line); }
+.list .btn { padding: 5px 10px; font-size: 12px; }
+.bar { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .08); overflow: hidden; margin-top: 5px; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--magenta), var(--gold)); box-shadow: 0 0 8px var(--magenta); }
+
+.song-row { display: grid; grid-template-columns: 12px minmax(0, 1.4fr) minmax(0, 1fr) 58px 32px; gap: 6px; align-items: center; }
+.song-row .swatch { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+.song-row .field { padding: 7px 9px; }
+.song-row select.field { padding: 7px 4px; }
+.song-row .x { height: 32px; border-radius: 10px; border: 1px solid var(--line); background: none; color: var(--muted); }
+.song-row .x:hover { color: var(--magenta); border-color: var(--magenta); }
+.song-head { font-size: 11px; color: var(--muted); }
+.pct { margin: 0; color: var(--muted); font-size: 12px; }
+
+.num-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 14px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); }
+.num-field input { width: 84px; flex: none; text-align: right; font-family: var(--tech); }
+
+/* ---------- 手机底部操作坞 ---------- */
+.dock { display: none; }
+.exit-live { display: none; position: fixed; z-index: 10; top: calc(10px + env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); opacity: .2; }
+.exit-live:hover, .exit-live:focus-visible { opacity: 1; }
+body.live .app { grid-template-columns: minmax(0, 1fr); }
+body.live .panel, body.live .dock { display: none !important; }
+body.live .exit-live { display: block; }
+body.live .wheel-wrap { width: min(100%, 72vh, 700px); }
+
+@media (max-width: 900px) {
+  html, body { height: auto; }
+  body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+  body.live { padding-bottom: 0; }
+  .app { display: block; height: auto; }
+  .stage { padding-block: 12px 16px; gap: 10px; }
+  .stage-head h1 { font-size: clamp(30px, 9vw, 44px); }
+  .rule-chip { font-size: 12px; padding: 3px 12px; }
+  .wheel-wrap { width: min(100%, 520px); }
+  .feed { top: 118px; width: 58%; }
+  .feed-item { font-size: 12px; padding: 5px 10px 5px 6px; }
+  .feed-item .gdot { width: 18px; height: 18px; }
+  .panel { border-left: 0; border-top: 1px solid var(--line); }
+  .panel-head { padding: 18px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); }
+  .tabs { margin-left: max(16px, env(safe-area-inset-left, 0px)); margin-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .tab { overflow: visible; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .desk-only { display: none; }
+
+  .dock { display: flex; align-items: center; gap: 10px; position: fixed; z-index: 9; left: 0; right: 0; bottom: 0;
+    padding: 10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    background: rgba(11, 8, 32, .82); border-top: 1px solid var(--line); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); }
+  .dock-gifts { flex: 1; min-width: 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .dock-gifts::-webkit-scrollbar { display: none; }
+  .dock .gift { flex: none; min-width: 74px; padding: 8px 10px; scroll-snap-align: start; }
+  .dock .gift b { font-size: 13px; }
+  .spin-btn { flex: none; width: 64px; height: 64px; border-radius: 50%; border: 0; font-family: var(--display); font-size: 26px; color: #2b1a00;
+    background: radial-gradient(circle at 35% 30%, #fff6d6, var(--gold) 55%, #d99a1e); box-shadow: 0 0 0 3px rgba(255, 209, 102, .25), 0 0 26px rgba(255, 209, 102, .55); }
+  .spin-btn:active { transform: scale(.94); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora i, .halo, .stage-head h1, .live-pill::before { animation: none; }
+  .banner, .feed-item { animation: none; }
+}
+</style>
+
+<div class="app">
+  <section class="stage" id="stage" aria-label="转盘舞台">
+    <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="floor" aria-hidden="true"></div>
+    <canvas id="fx" aria-hidden="true"></canvas>
+    <div class="feed" id="feed" aria-live="polite"></div>
+
+    <div class="topbar">
+      <span class="live-pill">LIVE</span>
+      <span class="queue-badge">等待转盘 <b id="queueCount">0</b></span>
+    </div>
+
+    <header class="stage-head">
+      <h1>今晚唱什么</h1>
+      <div class="rule-chip" id="ruleChip"></div>
+    </header>
+
+    <div class="wheel-wrap" id="wheelWrap">
+      <div class="halo" aria-hidden="true"></div>
+      <canvas id="wheel" aria-label="歌曲转盘，点击中心手动转一次"></canvas>
+      <div class="banner" id="banner" hidden></div>
+    </div>
+
+    <div class="upnext" id="upnext"></div>
+  </section>
+
+  <aside class="panel" aria-label="主播控制台">
+    <div class="panel-head">
+      <div>
+        <h2>主播控制台</h2>
+        <p>观众看不到这一栏，推流时进入「直播模式」即可隐藏</p>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="gift" aria-selected="true">打赏</button>
+      <button role="tab" data-tab="songs" aria-selected="false">歌单</button>
+      <button role="tab" data-tab="log" aria-selected="false">记录</button>
+      <button role="tab" data-tab="settings" aria-selected="false">设置</button>
+    </div>
+
+    <div class="tab" data-panel="gift">
+      <div class="group desk-only">
+        <button class="btn primary big" id="manualSpin">主播手动转一次<kbd>SPACE</kbd></button>
+      </div>
+      <div class="group">
+        <h3>模拟观众打赏</h3>
+        <div class="row">
+          <input class="field" id="viewer" placeholder="观众昵称（留空随机）" autocomplete="off">
+          <button class="btn" id="randomViewer">随机</button>
+        </div>
+        <div class="gifts" id="gifts"></div>
+        <p class="hint" id="ruleHint"></p>
+      </div>
+      <label class="switch" for="autoDemo">
+        <span>自动演示<small>每隔几秒随机来一位观众打赏，给客户看效果用</small></span>
+        <input type="checkbox" id="autoDemo">
+      </label>
+      <div class="group">
+        <h3>等待转盘</h3>
+        <ul class="list" id="queueList"></ul>
+      </div>
+      <div class="group">
+        <h3>观众累计（未满一次的部分）</h3>
+        <ul class="list" id="balanceList"></ul>
+      </div>
+    </div>
+
+    <div class="tab" data-panel="songs" hidden>
+      <div class="group">
+        <h3>转盘歌曲</h3>
+        <p class="hint">权重越高，扇区越大，转到的概率越高。改完立即生效。</p>
+        <div class="song-row song-head"><span></span><span>歌名</span><span>歌手</span><span>权重</span><span></span></div>
+        <div class="group" id="songList"></div>
+        <div class="row">
+          <button class="btn" id="addSong">添加歌曲</button>
+          <button class="btn" id="resetSongs">恢复示例歌单</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab" data-panel="log" hidden>
+      <div class="group">
+        <h3>本场点歌记录</h3>
+        <ul class="list" id="logList"></ul>
+        <button class="btn" id="clearLog">清空记录，开始新一场</button>
+      </div>
+    </div>
+
+    <div class="tab" data-panel="settings" hidden>
+      <div class="group">
+        <h3>打赏规则</h3>
+        <label class="num-field" for="coinPerSpin">每满多少币转一次<input class="field" type="number" min="1" id="coinPerSpin"></label>
+        <label class="num-field" for="maxSpins">单次打赏最多转几次<input class="field" type="number" min="1" max="20" id="maxSpins"></label>
+        <label class="num-field" for="duration">转动时长（秒）<input class="field" type="number" min="2" max="15" id="duration"></label>
+      </div>
+      <div class="group">
+        <h3>玩法</h3>
+        <label class="switch" for="noRepeat"><span>唱过的歌暂时移出转盘<small>一轮全部转到后自动放回</small></span><input type="checkbox" id="noRepeat"></label>
+        <label class="switch" for="sound"><span>转盘音效</span><input type="checkbox" id="sound"></label>
+        <label class="switch" for="green"><span>绿幕背景<small>在 OBS 里加「色度键」滤镜抠掉背景，转盘浮在画面上</small></span><input type="checkbox" id="green"></label>
+      </div>
+      <div class="group">
+        <h3>推流</h3>
+        <button class="btn primary big" id="goLive">进入直播模式</button>
+        <p class="hint">直播模式只显示转盘。用 OBS「窗口采集」抓这个浏览器窗口即可；按 Esc 或点右上角退出。</p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<nav class="dock" aria-label="快捷操作">
+  <div class="dock-gifts" id="dockGifts"></div>
+  <button class="spin-btn" id="dockSpin" aria-label="主播手动转一次">转</button>
+</nav>
+<button class="btn exit-live" id="exitLive">退出直播模式</button>
+
+<script>
+const TAU = Math.PI * 2;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const mod = (a, n) => ((a % n) + n) % n;
+const rand = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+const pick = arr => arr[Math.floor(rand() * arr.length)];
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const COLORS = ['#ff3d9a', '#7b3cff', '#22c8ec', '#ffad1f', '#ff5f45', '#1fd59a', '#4d6bff', '#d43dff'];
+const DEFAULT_SONGS = [
+  ['晴天', '周杰伦'], ['七里香', '周杰伦'], ['稻香', '周杰伦'], ['告白气球', '周杰伦'],
+  ['青花瓷', '周杰伦'], ['夜曲', '周杰伦'], ['简单爱', '周杰伦'], ['搁浅', '周杰伦'],
+  ['唯一', '王力宏'], ['大城小爱', '王力宏'], ['落叶归根', '王力宏'], ['心中的日月', '王力宏'],
+  ['需要人陪', '王力宏'], ['你不知道的事', '王力宏'],
+];
+const defaultSongs = () => DEFAULT_SONGS.map(([title, artist], i) => ({ id: 's' + i, title, artist, weight: 1 }));
+const GIFTS = [
+  { name: '小心心', coin: 1, color: '#ff7eb6', demo: 40 },
+  { name: '玫瑰', coin: 5, color: '#ff3d6e', demo: 25 },
+  { name: '棒棒糖', coin: 10, color: '#ffad1f', demo: 20 },
+  { name: '爱心气球', coin: 30, color: '#b46bff', demo: 10 },
+  { name: '火箭', coin: 100, color: '#33e0ff', demo: 5 },
+];
+const NAMES = ['晚风', '阿杰', '星河漫步', '小鹿乱撞', '七七', '柠檬不酸', '夜猫子', '一只大橘', '南方有雨', '奶茶三分糖', '老王', '听海'];
+const DEFAULT_SETTINGS = { coinPerSpin: 10, maxSpins: 3, duration: 6, noRepeat: true, sound: true, green: false };
+
+// ---------- 状态与本地保存 ----------
+const KEY = 'song-wheel-v1';
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+const state = {
+  songs: Array.isArray(saved.songs) && saved.songs.length ? saved.songs : defaultSongs(),
+  settings: { ...DEFAULT_SETTINGS, ...(saved.settings || {}) },
+  setlist: saved.setlist || [],
+  drawn: saved.drawn || [],
+  balances: saved.balances || {},
+};
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+// ---------- 音效 ----------
+let ac = null;
+function audio() {
+  if (!state.settings.sound) return null;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+  } catch (e) { return null; }
+  return ac;
+}
+function blip(freq, dur, type = 'square', vol = .05, when = 0) {
+  const a = audio(); if (!a || a.state !== 'running') return;
+  const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + when;
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + .02);
+}
+const sfx = {
+  tick: () => blip(1500, .03, 'square', .025),
+  gift: () => { blip(880, .12, 'sine', .05); blip(1320, .16, 'sine', .05, .08); },
+  win: () => [523, 659, 784, 1047, 1319].forEach((f, i) => blip(f, .35, 'triangle', .08, i * .08)),
+};
+document.addEventListener('pointerdown', () => audio(), { once: true });
+
+// ---------- 转盘扇区 ----------
+let segs = [];
+function buildSegs() {
+  const valid = state.songs.filter(s => s.title.trim());
+  let active = valid.filter(s => !(state.settings.noRepeat && state.drawn.includes(s.id)));
+  if (active.length < 2 && valid.length >= 2) {
+    if (state.drawn.length) toastText('一轮全部转到，歌单已放回转盘');
+    state.drawn = []; active = valid; save();
+  }
+  const total = active.reduce((a, s) => a + (+s.weight || 1), 0);
+  let a = 0;
+  segs = active.map((s, i) => {
+    const w = (+s.weight || 1) / total * TAU;
+    let color = COLORS[i % COLORS.length];
+    if (i === active.length - 1 && i > 0 && color === COLORS[0]) color = COLORS[3];
+    const seg = { song: s, start: a, end: a + w, color, dark: shade(color, .45) };
+    a += w;
+    return seg;
+  });
+}
+const colorOf = id => (segs.find(s => s.song.id === id) || {}).color || 'transparent';
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = v => Math.round(v * (1 - k));
+  return `rgb(${ch(n >> 16)},${ch((n >> 8) & 255)},${ch(n & 255)})`;
+}
+
+// ---------- 绘制 ----------
+const cv = $('#wheel'), ctx = cv.getContext('2d');
+const fxc = $('#fx'), fx = fxc.getContext('2d');
+let size = 0, rot = 0, kick = 0, highlightId = null, dpr = 1;
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const r = cv.getBoundingClientRect();
+  size = r.width; cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.width * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const s = fxc.getBoundingClientRect();
+  fxc.width = Math.round(s.width * dpr); fxc.height = Math.round(s.height * dpr);
+  fx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+new ResizeObserver(resize).observe(cv);
+new ResizeObserver(resize).observe($('#stage'));
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const FONT_BODY = cssVar('--body'), FONT_DISPLAY = cssVar('--display');
+
+function fitText(text, maxW, font0) {
+  let f = font0;
+  ctx.font = `700 ${f}px ${FONT_BODY}`;
+  while (ctx.measureText(text).width > maxW && f > 11) { f -= 1; ctx.font = `700 ${f}px ${FONT_BODY}`; }
+  let t = text;
+  while (ctx.measureText(t).width > maxW && t.length > 1) t = t.slice(0, -2) + '…';
+  return t;
+}
+
+function draw(now) {
+  if (!size) return;
+  const c = size / 2, R = c * .96, r = c * .8;
+  ctx.clearRect(0, 0, size, size);
+  ctx.save(); ctx.translate(c, c);
+
+  // 金属外圈
+  const metal = ctx.createLinearGradient(-R, -R, R, R);
+  metal.addColorStop(0, '#fff3c4'); metal.addColorStop(.3, '#d9a43a'); metal.addColorStop(.5, '#ffe7a0');
+  metal.addColorStop(.75, '#a8761f'); metal.addColorStop(1, '#ffdf8a');
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fillStyle = metal;
+  ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 24; ctx.fill(); ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(0, 0, R * .965, 0, TAU); ctx.fillStyle = '#1a0f3d'; ctx.fill();
+
+  // 跑马灯
+  const n = 32, br = (R * .965 + r) / 2, bs = (R - r) * .17;
+  const phase = reduceMotion ? 0 : Math.floor(now / (spin ? 70 : 480));
+  for (let i = 0; i < n; i++) {
+    const a = i / n * TAU, lit = (i + phase) % 2 === 0;
+    const x = Math.cos(a) * br, y = Math.sin(a) * br;
+    ctx.beginPath(); ctx.arc(x, y, bs, 0, TAU);
+    if (lit) {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, bs);
+      g.addColorStop(0, '#fff'); g.addColorStop(.5, '#ffe59a'); g.addColorStop(1, '#ffb000');
+      ctx.fillStyle = g; ctx.shadowColor = '#ffd166'; ctx.shadowBlur = bs * 3;
+    } else { ctx.fillStyle = '#5a4520'; ctx.shadowBlur = 0; }
+    ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+
+  // 扇区
+  ctx.save(); ctx.rotate(rot - Math.PI / 2);
+  if (!segs.length) { ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fillStyle = '#1a0f3d'; ctx.fill(); }
+  for (const s of segs) {
+    const grad = ctx.createRadialGradient(0, 0, r * .15, 0, 0, r);
+    grad.addColorStop(0, s.dark); grad.addColorStop(.75, s.color); grad.addColorStop(1, s.color);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r, s.start, s.end); ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+    if (highlightId) {
+      if (s.song.id !== highlightId) { ctx.fillStyle = 'rgba(8,5,24,.68)'; ctx.fill(); }
+      else { ctx.fillStyle = `rgba(255,255,255,${.12 + .12 * Math.sin(now / 120)})`; ctx.fill(); }
+    }
+    ctx.strokeStyle = 'rgba(255,230,160,.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    const mid = (s.start + s.end) / 2, arc = s.end - s.start;
+    ctx.save(); ctx.rotate(mid);
+    const f0 = Math.max(11, Math.min(r * .088, r * .62 * arc * .7));
+    const label = fitText(s.song.title, r * .56, f0);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 1;
+    ctx.fillText(label, r * .9, 0);
+    ctx.restore();
+  }
+  // 内圈高光
+  const gloss = ctx.createRadialGradient(0, 0, r * .6, 0, 0, r);
+  gloss.addColorStop(0, 'rgba(255,255,255,0)'); gloss.addColorStop(1, 'rgba(255,255,255,.12)');
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fillStyle = gloss; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = '#ffd166'; ctx.stroke();
+  ctx.restore();
+
+  // 中心按钮
+  const hub = r * .2;
+  ctx.beginPath(); ctx.arc(0, 0, hub * 1.18, 0, TAU); ctx.fillStyle = metal; ctx.fill();
+  const g = ctx.createRadialGradient(-hub * .35, -hub * .35, hub * .1, 0, 0, hub);
+  g.addColorStop(0, '#ff9ccc'); g.addColorStop(.55, '#ff3d9a'); g.addColorStop(1, '#7b1fd6');
+  ctx.beginPath(); ctx.arc(0, 0, hub, 0, TAU); ctx.fillStyle = g;
+  ctx.shadowColor = '#ff3d9a'; ctx.shadowBlur = spin ? 30 : 16 + 8 * Math.sin(now / 400); ctx.fill(); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `${hub * .95}px ${FONT_DISPLAY}`;
+  ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 6;
+  ctx.fillText(spin ? '…' : '转', 0, hub * .05); ctx.shadowBlur = 0;
+
+  // 指针
+  ctx.save(); ctx.translate(0, -R + 2); ctx.rotate(-kick * .35);
+  const pw = R * .075, ph = R * .21;
+  ctx.beginPath(); ctx.moveTo(-pw, 0); ctx.quadraticCurveTo(0, -pw * 1.2, pw, 0); ctx.lineTo(0, ph); ctx.closePath();
+  const pg = ctx.createLinearGradient(-pw, 0, pw, 0);
+  pg.addColorStop(0, '#fff6d6'); pg.addColorStop(.5, '#ffd166'); pg.addColorStop(1, '#c7881a');
+  ctx.fillStyle = pg; ctx.shadowColor = 'rgba(255,209,102,.8)'; ctx.shadowBlur = 14; ctx.fill();
+  ctx.shadowBlur = 0; ctx.lineWidth = 2; ctx.strokeStyle = '#5a3a00'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, pw * .1, pw * .35, 0, TAU); ctx.fillStyle = '#ff3d9a'; ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+// ---------- 彩带特效 ----------
+let parts = [];
+function burst() {
+  if (reduceMotion) return;
+  const st = $('#stage').getBoundingClientRect(), w = cv.getBoundingClientRect();
+  const x = w.left - st.left + w.width / 2, y = w.top - st.top + w.height / 2;
+  const cols = ['#ff3d9a', '#ffd166', '#33e0ff', '#b46bff', '#ffffff', '#1fd59a'];
+  for (let i = 0; i < 160; i++) {
+    const a = rand() * TAU, v = 4 + rand() * 9;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4, s: 4 + rand() * 6, r: rand() * TAU, vr: (rand() - .5) * .4, c: pick(cols), life: 1 });
+  }
+}
+function drawFx() {
+  const w = fxc.width / dpr, h = fxc.height / dpr;
+  fx.clearRect(0, 0, w, h);
+  if (!parts.length) return;
+  for (const p of parts) {
+    p.vx *= .985; p.vy = p.vy * .985 + .22; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life -= .007;
+    fx.save(); fx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.5));
+    fx.translate(p.x, p.y); fx.rotate(p.r); fx.fillStyle = p.c;
+    fx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2 * (1 + Math.sin(p.r * 3)));
+    fx.restore();
+  }
+  parts = parts.filter(p => p.life > 0 && p.y < h + 20);
+}
+
+function hitIndex() {
+  const t = mod(-rot, TAU);
+  return segs.findIndex(s => t >= s.start && t < s.end);
+}
+
+// ---------- 转动 ----------
+let spin = null, showing = false, lastIdx = -1;
+const queue = [];
+const ease = p => 1 - Math.pow(1 - p, 4);
+
+function frame(now) {
+  if (spin) {
+    const p = Math.min(1, (now - spin.t0) / spin.dur);
+    rot = spin.from + (spin.to - spin.from) * ease(p);
+    const idx = hitIndex();
+    if (idx !== lastIdx) { lastIdx = idx; kick = 1; sfx.tick(); }
+    if (p >= 1) { const s = spin; spin = null; onSpinEnd(s); }
+  }
+  kick *= .82;
+  draw(now);
+  drawFx();
+  requestAnimationFrame(frame);
+}
+
+function enqueue(req) { queue.push(req); renderQueue(); pump(); }
+function pump() {
+  if (spin || showing || !queue.length || segs.length < 2) return;
+  startSpin(queue.shift());
+  renderQueue();
+}
+function startSpin(req) {
+  const x = rand() * TAU;
+  const seg = segs.find(s => x >= s.start && x < s.end) || segs[segs.length - 1];
+  const w = seg.end - seg.start, theta = seg.start + w * .15 + rand() * w * .7;
+  const turns = reduceMotion ? 1 : 5 + Math.floor(rand() * 3);
+  const dur = reduceMotion ? 1200 : state.settings.duration * 1000;
+  spin = { from: rot, to: rot + turns * TAU + mod(-theta - rot, TAU), t0: performance.now(), dur, req, seg };
+  $('#wheelWrap').classList.add('spinning');
+}
+function onSpinEnd(s) {
+  showing = true;
+  $('#wheelWrap').classList.remove('spinning');
+  rot = mod(rot, TAU);
+  const song = s.seg.song;
+  highlightId = song.id;
+  state.setlist.push({ id: Date.now() + '' + Math.floor(rand() * 1e4), title: song.title, artist: song.artist, by: s.req.name, gift: s.req.gift, at: Date.now(), done: false });
+  if (state.settings.noRepeat) state.drawn.push(song.id);
+  save();
+  const b = $('#banner');
+  b.innerHTML = `
+    <p class="thanks">${s.req.gift ? `感谢 <b>${esc(s.req.name)}</b> 送出的${esc(s.req.gift)}` : '主播手动转盘'}</p>
+    <p class="label">NEXT SONG</p>
+    <p class="song">《${esc(song.title)}》</p>
+    <p class="artist">${esc(song.artist || '')}</p>`;
+  b.hidden = false;
+  sfx.win(); burst();
+  renderLog(); renderUpnext();
+  setTimeout(() => {
+    b.hidden = true; highlightId = null; showing = false;
+    buildSegs(); renderSongs(); pump();
+  }, 4200);
+}
+
+// ---------- 打赏 ----------
+function feedItem(html, cls = '') {
+  const item = document.createElement('div');
+  item.className = 'feed-item ' + cls;
+  item.innerHTML = html;
+  const feed = $('#feed');
+  feed.prepend(item);
+  setTimeout(() => item.remove(), 4300);
+  while (feed.children.length > (innerWidth < 900 ? 3 : 5)) feed.lastChild.remove();
+}
+const toastText = text => feedItem(esc(text), 'sys');
+
+function sendGift(name, gift) {
+  name = name.trim() || pick(NAMES);
+  const { coinPerSpin: N, maxSpins: M } = state.settings;
+  let bal = (state.balances[name] || 0) + gift.coin;
+  let spins = Math.floor(bal / N);
+  if (spins > M) { spins = M; bal = bal % N; } else bal -= spins * N;
+  if (bal > 0) state.balances[name] = bal; else delete state.balances[name];
+  save();
+  sfx.gift();
+  feedItem(`<i class="gdot" style="background:${gift.color};color:${gift.color}"></i><span><b>${esc(name)}</b> 送出 ${esc(gift.name)} · ${spins ? `<em>转盘 +${spins}</em>` : `累计 ${bal}/${N}`}</span>`);
+  for (let i = 0; i < spins; i++) enqueue({ name, gift: gift.name });
+  renderBalances();
+}
+
+let demoTimer = null;
+function setDemo(on) {
+  clearTimeout(demoTimer);
+  if (!on) return;
+  (function loop() {
+    demoTimer = setTimeout(() => {
+      if (queue.length < 3) {
+        let x = rand() * 100, g = GIFTS[0];
+        for (const gi of GIFTS) { if ((x -= gi.demo) < 0) { g = gi; break; } }
+        sendGift(pick(NAMES), g);
+      }
+      loop();
+    }, 2500 + rand() * 4500);
+  })();
+}
+
+// ---------- 界面渲染 ----------
+function renderRule() {
+  const { coinPerSpin: N, maxSpins: M } = state.settings;
+  $('#ruleChip').innerHTML = `打赏每满 <b>${N}</b> 币转一次 · 转到哪首唱哪首`;
+  $('#ruleHint').textContent = `规则：每满 ${N} 币转一次，单次打赏最多转 ${M} 次，不足 ${N} 币的部分会累计。`;
+}
+function renderGifts() {
+  const html = GIFTS.map((g, i) => `
+    <button class="gift" data-gift="${i}" style="--c:${g.color}"><span class="dot"></span><b>${g.name}</b><small>${g.coin} 币</small></button>`).join('');
+  $('#gifts').innerHTML = html;
+  $('#dockGifts').innerHTML = html;
+}
+function renderQueue() {
+  $('#queueCount').textContent = queue.length;
+  $('#queueList').innerHTML = queue.length
+    ? queue.map((q, i) => `<li><span class="num">${i + 1}</span><span class="grow">${esc(q.name)}</span><span class="sub">${esc(q.gift || '手动')}</span></li>`).join('')
+    : '<li class="empty">暂无，观众打赏后会排在这里</li>';
+}
+function renderBalances() {
+  const N = state.settings.coinPerSpin;
+  const rows = Object.entries(state.balances).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  $('#balanceList').innerHTML = rows.length
+    ? rows.map(([n, b]) => `<li><span class="grow">${esc(n)}<div class="bar"><i style="width:${Math.min(100, b / N * 100)}%"></i></div></span><span class="sub">${b}/${N} 币</span></li>`).join('')
+    : '<li class="empty">暂无</li>';
+}
+function renderUpnext() {
+  const todo = state.setlist.filter(s => !s.done).slice(0, 4);
+  $('#upnext').innerHTML = todo.length
+    ? '<span class="tag">UP NEXT</span>' + todo.map((s, i) => `<span class="chip"><i>${i + 1}</i>${esc(s.title)}<small>${esc(s.by)}</small></span>`).join('')
+    : '<span class="empty">还没有人点歌，送份礼物转一下吧</span>';
+}
+function renderLog() {
+  const list = state.setlist;
+  $('#logList').innerHTML = list.length
+    ? list.map((s, i) => {
+        const t = new Date(s.at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        return `<li class="${s.done ? 'done' : ''}"><span class="num">${i + 1}</span>
+          <span class="grow">《${esc(s.title)}》<div class="sub">${esc(s.by)} · ${esc(s.gift || '手动')} · ${t}</div></span>
+          <button class="btn" data-done="${s.id}">${s.done ? '撤销' : '唱完'}</button></li>`;
+      }).join('')
+    : '<li class="empty">本场还没有转盘记录</li>';
+}
+function renderSongs() {
+  const valid = state.songs.filter(s => s.title.trim());
+  $('#songList').innerHTML = state.songs.map(s => `<div class="song-row" data-id="${s.id}">
+      <span class="swatch" style="background:${colorOf(s.id)};color:${colorOf(s.id)}"></span>
+      <input class="field" id="t-${s.id}" data-k="title" value="${esc(s.title)}" placeholder="歌名">
+      <input class="field" id="a-${s.id}" data-k="artist" value="${esc(s.artist)}" placeholder="歌手">
+      <select class="field" id="w-${s.id}" data-k="weight">
+        ${[1, 2, 3, 4, 5].map(w => `<option value="${w}" ${+s.weight === w ? 'selected' : ''}>×${w}</option>`).join('')}
+      </select>
+      <button class="x" data-del="${s.id}" aria-label="删除 ${esc(s.title)}">✕</button>
+    </div>`).join('') + `<p class="pct">共 ${valid.length} 首${state.settings.noRepeat && state.drawn.length ? `，其中 ${state.drawn.length} 首已转到、暂时移出（无色点）` : ''}</p>`;
+}
+function renderSettings() {
+  const s = state.settings;
+  ['coinPerSpin', 'maxSpins', 'duration'].forEach(k => $('#' + k).value = s[k]);
+  ['noRepeat', 'sound', 'green'].forEach(k => $('#' + k).checked = s[k]);
+  document.body.classList.toggle('green', s.green);
+}
+
+// ---------- 事件 ----------
+document.querySelector('.tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]'); if (!b) return;
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== b.dataset.tab);
+});
+const manual = () => enqueue({ name: '主播', gift: null });
+$('#manualSpin').onclick = manual;
+$('#dockSpin').onclick = manual;
+cv.addEventListener('click', e => {
+  const r = cv.getBoundingClientRect();
+  const dx = e.clientX - r.left - r.width / 2, dy = e.clientY - r.top - r.height / 2;
+  if (Math.hypot(dx, dy) < r.width / 2 * .8 * .24) manual();
+});
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, select, textarea, button')) return;
+  if (e.code === 'Space') { e.preventDefault(); manual(); }
+  if (e.key === 'Escape' && location.hash === '#overlay') location.hash = '';
+});
+const onGift = e => {
+  const b = e.target.closest('[data-gift]'); if (!b) return;
+  sendGift($('#viewer').value, GIFTS[+b.dataset.gift]);
+};
+$('#gifts').addEventListener('click', onGift);
+$('#dockGifts').addEventListener('click', onGift);
+$('#randomViewer').onclick = () => { $('#viewer').value = pick(NAMES); };
+$('#autoDemo').onchange = e => setDemo(e.target.checked);
+
+$('#songList').addEventListener('input', e => {
+  const row = e.target.closest('[data-id]'), k = e.target.dataset.k; if (!row || !k) return;
+  const song = state.songs.find(s => s.id === row.dataset.id);
+  song[k] = k === 'weight' ? +e.target.value : e.target.value;
+  save();
+  if (!spin && !showing) buildSegs();
+  document.querySelectorAll('#songList .song-row').forEach(r => {
+    const sw = r.querySelector('.swatch'), c = colorOf(r.dataset.id);
+    sw.style.background = c; sw.style.color = c;
+  });
+});
+$('#songList').addEventListener('click', e => {
+  const id = e.target.dataset.del; if (!id) return;
+  state.songs = state.songs.filter(s => s.id !== id);
+  state.drawn = state.drawn.filter(d => d !== id);
+  save(); if (!spin && !showing) buildSegs(); renderSongs();
+});
+$('#addSong').onclick = () => {
+  const id = 's' + Date.now();
+  state.songs.push({ id, title: '', artist: '', weight: 1 });
+  save(); renderSongs();
+  document.getElementById('t-' + id).focus();
+};
+$('#resetSongs').onclick = () => {
+  state.songs = defaultSongs(); state.drawn = [];
+  save(); if (!spin && !showing) buildSegs(); renderSongs();
+};
+
+$('#logList').addEventListener('click', e => {
+  const id = e.target.dataset.done; if (!id) return;
+  const item = state.setlist.find(s => s.id === id); item.done = !item.done;
+  save(); renderLog(); renderUpnext();
+});
+let clearArmed = false;
+$('#clearLog').onclick = e => {
+  if (!clearArmed) { clearArmed = true; e.target.textContent = '再点一次确认清空'; setTimeout(() => { clearArmed = false; e.target.textContent = '清空记录，开始新一场'; }, 3000); return; }
+  clearArmed = false; e.target.textContent = '清空记录，开始新一场';
+  state.setlist = []; state.drawn = []; state.balances = {};
+  save(); if (!spin && !showing) buildSegs(); renderLog(); renderUpnext(); renderSongs(); renderBalances();
+};
+
+['coinPerSpin', 'maxSpins', 'duration'].forEach(k => $('#' + k).addEventListener('change', e => {
+  const v = Math.max(+e.target.min || 1, Math.min(+e.target.max || 9999, Math.round(+e.target.value) || DEFAULT_SETTINGS[k]));
+  state.settings[k] = v; e.target.value = v; save(); renderRule(); renderBalances();
+}));
+['noRepeat', 'sound', 'green'].forEach(k => $('#' + k).addEventListener('change', e => {
+  state.settings[k] = e.target.checked;
+  if (k === 'noRepeat' && !e.target.checked) state.drawn = [];
+  save(); renderSettings();
+  if (k === 'noRepeat' && !spin && !showing) { buildSegs(); renderSongs(); }
+}));
+
+const syncLive = () => document.body.classList.toggle('live', location.hash === '#overlay');
+$('#goLive').onclick = () => { location.hash = 'overlay'; };
+$('#exitLive').onclick = () => { location.hash = ''; };
+window.addEventListener('hashchange', syncLive);
+
+// ---------- 启动 ----------
+buildSegs();
+renderRule(); renderGifts(); renderQueue(); renderBalances(); renderUpnext(); renderLog(); renderSongs(); renderSettings(); syncLive();
+resize();
+requestAnimationFrame(frame);
+</script>
